@@ -9,8 +9,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
-  "dependencies": {
-    "csv-parse": "^6.1.0"
-  }
+  "type": "module"
 }
