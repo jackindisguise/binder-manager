@@ -1,0 +1,384 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+h1 {
+    color: white;
+    text-align: center;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.controls {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.controls button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #667eea;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.controls button:hover {
+    background: #5568d3;
+}
+
+.controls button.secondary {
+    background: #6c757d;
+}
+
+.controls button.secondary:hover {
+    background: #5a6268;
+}
+
+.controls button.active {
+    background: #dc3545;
+}
+
+.controls button.active:hover {
+    background: #c82333;
+}
+
+.pull-mode-indicator {
+    color: #dc3545;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+.controls input[type="file"] {
+    display: none;
+}
+
+.controls label {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: #6c757d;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.controls label:hover {
+    background: #5a6268;
+}
+
+.pages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.page {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.page:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #333;
+    font-size: 18px;
+}
+
+.cards-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.card {
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    background: #fff;
+    min-height: 100px;
+    cursor: pointer;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    z-index: 10;
+}
+
+.card.pulling {
+    animation: pullCard 0.5s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes pullCard {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100px);
+        opacity: 0;
+    }
+}
+
+.card.pull-progress {
+    border-color: #dc3545;
+    position: relative;
+}
+
+.pull-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: #dc3545;
+    transition: width 0.1s linear;
+    border-radius: 0 0 6px 6px;
+}
+
+.card.recently-added {
+    border-left: 4px solid #28a745;
+    background: linear-gradient(to right, rgba(40, 167, 69, 0.08), #fff);
+}
+
+.card.empty {
+    background: #f0f0f0;
+    border: 2px dashed #ccc;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    color: #999;
+    font-size: 14px;
+}
+
+.card-empty-label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-index {
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 6px;
+    text-align:center;
+}
+
+.card.empty .card-index {
+    background: rgba(153, 153, 153, 0.7);
+    flex-shrink: 0;
+}
+
+.card-info {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.card-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.card-number {
+    font-size: 12px;
+    color: #666;
+}
+
+.card-condition {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.card-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #667eea;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #eee;
+}
+
+.stats {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #667eea;
+}
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.modal-content h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #666;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.modal-content input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.modal-buttons button.primary {
+    background: #667eea;
+    color: white;
+}
+
+.modal-buttons button.primary:hover {
+    background: #5568d3;
+}
+
+.modal-buttons button.secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.modal-buttons button.secondary:hover {
+    background: #5a6268;
+}
+
+.modal-buttons button.danger {
+    background: #dc3545;
+    color: white;
+}
+
+.modal-buttons button.danger:hover {
+    background: #c82333;
+}
+
+.modal-buttons {
+    justify-content: space-between;
+}
+
+.modal-buttons .left {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-buttons .right {
+    display: flex;
+    gap: 10px;
+}

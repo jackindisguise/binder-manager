@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCG Binder Collection - Standalone</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>TCG Binder Collection</h1>
+        
+        <div class="controls">
+            <button onclick="openAddCardModal()">Add Card</button>
+            <button onclick="openBulkInsertModal()" class="secondary">Bulk Insert</button>
+            <button id="pullModeBtn" onclick="togglePullMode()" class="secondary">Pull Mode: Off</button>
+            <span id="pullModeIndicator" class="pull-mode-indicator" style="display: none;">Pull Mode Active - Click cards to remove</span>
+            <button onclick="openSortPreview()" class="secondary">Sort</button>
+            <label for="pageSize" style="display: flex; align-items: center; gap: 5px;">
+                <span style="font-size: 14px;">Page Size:</span>
+                <select id="pageSize" style="padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;" onchange="changePageSize()">
+                    <option value="4">2x2 (4 cards)</option>
+                    <option value="9" selected>3x3 (9 cards)</option>
+                    <option value="12">4x3 (12 cards)</option>
+                </select>
+            </label>
+            <button onclick="exportBinder()" class="secondary">Export JSON</button>
+            <label for="importFile">Import JSON</label>
+            <input type="file" id="importFile" accept=".json" onchange="importBinder(event)">
+            <button onclick="clearBinder()" class="secondary">Clear All</button>
+        </div>
+        
+        <div class="stats" id="stats">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+        
+        <div class="pages-grid" id="pagesGrid">
+            <!-- Pages will be populated by JavaScript -->
+        </div>
+    </div>
+    
+    <!-- Sort Preview Modal -->
+    <div class="modal" id="sortModal">
+        <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
+            <h2>Sort Binder Preview</h2>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600;">Sort by:</label>
+                <select id="sortCriteria" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onchange="updateSortPreview()">
+                    <option value="name">Name</option>
+                    <option value="number">Number</option>
+                    <option value="value">Value (High to Low)</option>
+                </select>
+            </div>
+            <div id="sortPreviewInfo" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <!-- Sort info will be populated here -->
+            </div>
+            <div id="sortPreviewSwaps" style="margin-bottom: 20px;">
+                <!-- Swaps will be listed here -->
+            </div>
+            <div class="modal-buttons">
+                <div class="left"></div>
+                <div class="right">
+                    <button class="secondary" onclick="closeSortModal()">Cancel</button>
+                    <button class="primary" onclick="applySort()">Apply Sort</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Card Modal -->
+    <div class="modal" id="cardModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add Card</h2>
+            <label for="cardName">Name:</label>
+            <input type="text" id="cardName" placeholder="Card name">
+            <label for="cardNumber">Number:</label>
+            <input type="text" id="cardNumber" placeholder="Card number">
+            <label for="cardCondition">Condition:</label>
+            <input type="text" id="cardCondition" placeholder="e.g., Near Mint Foil">
+            <label for="cardValue">Value:</label>
+            <input type="number" id="cardValue" placeholder="0.00" step="0.01">
+            <div class="modal-buttons">
+                <div class="left">
+                    <button id="pullCardBtn" class="danger" onclick="pullCardFromModal()" style="display: none;">Pull Card</button>
+                </div>
+                <div class="right">
+                    <button class="secondary" onclick="closeCardModal()">Cancel</button>
+                    <button class="primary" onclick="saveCard()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bulk Insert Modal -->
+    <div class="modal" id="bulkInsertModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2>Bulk Insert Cards</h2>
+            <p style="margin-bottom: 15px; color: #666; font-size: 14px;">
+                Enter cards in CSV format (one per line):<br>
+                <strong>Name, Number, Condition, Value</strong><br>
+                Example: Lightning, 24-070L, Near Mint, 6.29
+            </p>
+            <label for="bulkInsertText">CSV Data:</label>
+            <textarea id="bulkInsertText" style="width: 100%; min-height: 200px; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; font-family: monospace; resize: vertical;" placeholder="Lightning, 24-070L, Near Mint, 6.29&#10;Cloud, 25-006L, Near Mint Foil, 23.74"></textarea>
+            <div id="bulkInsertStatus" style="margin-top: 10px; padding: 10px; border-radius: 8px; display: none;"></div>
+            <div class="modal-buttons">
+                <div class="left"></div>
+                <div class="right">
+                    <button class="secondary" onclick="closeBulkInsertModal()">Cancel</button>
+                    <button class="primary" onclick="processBulkInsert()">Insert Cards</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
