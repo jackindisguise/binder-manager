@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCG Binder Collection - Standalone</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 style="position: relative;">
+            <span id="binderTitle" style="opacity: 0;">TCG Binder Collection</span>
+            <button id="renameBinderBtn" class="help-button" onclick="openRenameBinderModal()" title="Rename Binder" style="right: 40px;">✎</button>
+            <button id="helpBtn" class="help-button" onclick="openHelpModal()" title="Help">?</button>
+        </h1>
+        
+        <div class="controls">
+            <button onclick="openAddCardModal()">Add Card</button>
+            <button onclick="openBulkInsertModal()" class="secondary">Bulk Insert</button>
+            <button id="pullModeBtn" onclick="togglePullMode()" class="secondary">Pull Mode: Off</button>
+            <button id="moveModeBtn" onclick="toggleMoveMode()" class="secondary">Move Mode: Off</button>
+            <button onclick="openSortPreview()" class="secondary">Sort</button>
+            <button onclick="openConvertPreview()" class="secondary">Convert</button>
+            <label for="pageSize" class="page-size-label secondary">
+                <span class="page-size-text">Page Size:</span>
+                <select id="pageSize" class="page-size-select" onchange="changePageSize()">
+                    <option value="4">2x2 (4 cards)</option>
+                    <option value="9" selected>3x3 (9 cards)</option>
+                    <option value="12">4x3 (12 cards)</option>
+                </select>
+            </label>
+            <button id="firstIndexZeroBtn" class="secondary" onclick="toggleFirstIndex()">First Index is 0</button>
+            <button onclick="exportBinder()" class="secondary">Export JSON</button>
+            <label for="importFile" class="secondary">Import JSON</label>
+            <input type="file" id="importFile" accept=".json" onchange="importBinder(event)">
+            <button onclick="clearBinder()" class="secondary">Clear All</button>
+        </div>
+        
+        <div class="stats" id="stats">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+        
+        <div class="pages-grid" id="pagesGrid">
+            <!-- Pages will be populated by JavaScript -->
+        </div>
+    </div>
+    
+    <!-- Sort Preview Modal -->
+    <div class="modal" id="sortModal">
+        <div class="modal-content modal-content-large">
+            <h2>Sort Binder Preview</h2>
+            <div class="sort-section">
+                <label class="sort-label">Sort by:</label>
+                <select id="sortCriteria" class="sort-select" onchange="updateSortPreview()">
+                    <option value="name">Name</option>
+                    <option value="number">Number</option>
+                    <option value="value">Value (High to Low)</option>
+                </select>
+            </div>
+            <div id="sortPreviewInfo" class="sort-preview-info">
+                <!-- Sort info will be populated here -->
+            </div>
+            <div id="sortPreviewSwaps" class="sort-preview-swaps">
+                <!-- Swaps will be listed here -->
+            </div>
+            <div class="modal-buttons">
+                <div class="left">
+                    <button id="copySortMovesBtn" class="secondary" onclick="copySortMoves()" style="display: none;">Copy Moves</button>
+                </div>
+                <div class="right">
+                    <button class="secondary" onclick="closeSortModal()">Cancel</button>
+                    <button class="primary" onclick="applySort()">Apply Sort</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Convert Binder Modal -->
+    <div class="modal" id="convertModal">
+        <div class="modal-content modal-content-large">
+            <h2>Convert Binder</h2>
+            <div class="sort-section">
+                <label class="sort-label">Convert to form factor:</label>
+                <select id="convertTargetSize" class="sort-select" onchange="updateConvertPreview()">
+                    <option value="4">2x2 (4 cards per page)</option>
+                    <option value="9">3x3 (9 cards per page)</option>
+                    <option value="12">4x3 (12 cards per page)</option>
+                </select>
+            </div>
+            <div class="sort-section">
+                <label class="sort-label">Sort by:</label>
+                <select id="convertSortCriteria" class="sort-select" onchange="updateConvertPreview()">
+                    <option value="name">Name</option>
+                    <option value="number">Number</option>
+                    <option value="value">Value (High to Low)</option>
+                    <option value="none">No sorting (keep current order)</option>
+                </select>
+            </div>
+            <div id="convertPreviewInfo" class="sort-preview-info">
+                <!-- Convert info will be populated here -->
+            </div>
+            <div id="convertPreviewMoves" class="sort-preview-swaps">
+                <!-- Moves will be listed here -->
+            </div>
+            <div class="modal-buttons">
+                <div class="left">
+                    <button id="copyConvertMovesBtn" class="secondary" onclick="copyConvertMoves()" style="display: none;">Copy Moves</button>
+                </div>
+                <div class="right">
+                    <button class="secondary" onclick="closeConvertModal()">Cancel</button>
+                    <button class="primary" onclick="applyConvert()">Apply Conversion</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rename Binder Modal -->
+    <div class="modal" id="renameBinderModal">
+        <div class="modal-content">
+            <h2>Rename Binder</h2>
+            <label for="binderName">Binder Name:</label>
+            <input type="text" id="binderName" placeholder="Enter binder name" maxlength="50">
+            <div class="modal-buttons">
+                <div class="left"></div>
+                <div class="right">
+                    <button class="secondary" onclick="closeRenameBinderModal()">Cancel</button>
+                    <button class="primary" onclick="saveBinderName()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Card Modal -->
+    <div class="modal" id="cardModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add Card</h2>
+            <label for="cardName">Name:</label>
+            <input type="text" id="cardName" placeholder="Card name">
+            <label for="cardNumber">Number:</label>
+            <input type="text" id="cardNumber" placeholder="Card number">
+            <label for="cardCondition">Condition:</label>
+            <input type="text" id="cardCondition" placeholder="e.g., Near Mint Foil">
+            <label for="cardValue">Value:</label>
+            <input type="number" id="cardValue" placeholder="0.00" step="0.01">
+            <div class="modal-buttons">
+                <div class="left">
+                    <button id="pullCardBtn" class="danger hidden" onclick="pullCardFromModal()">Pull Card</button>
+                </div>
+                <div class="right">
+                    <button class="secondary" onclick="closeCardModal()">Cancel</button>
+                    <button class="primary" onclick="saveCard()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bulk Insert Modal -->
+    <div class="modal" id="bulkInsertModal">
+        <div class="modal-content modal-content-medium">
+            <h2>Bulk Insert Cards</h2>
+            <p class="bulk-insert-description">
+                Enter cards in CSV format (one per line):<br>
+                <strong>Name, Number, Condition, Value</strong><br>
+                Example: Lightning, 24-070L, Near Mint, 6.29
+            </p>
+            <label for="bulkInsertText">CSV Data:</label>
+            <textarea id="bulkInsertText" class="bulk-insert-textarea" placeholder="Lightning, 24-070L, Near Mint, 6.29&#10;Cloud, 25-006L, Near Mint Foil, 23.74"></textarea>
+            <div id="bulkInsertStatus" class="bulk-insert-status hidden"></div>
+            <div class="modal-buttons">
+                <div class="left"></div>
+                <div class="right">
+                    <button class="secondary" onclick="closeBulkInsertModal()">Cancel</button>
+                    <button class="primary" onclick="processBulkInsert()">Insert Cards</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Modal -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content modal-content-large">
+            <h2>TCG Binder Collection - Help</h2>
+            <div style="line-height: 1.8;">
+                <h3 style="margin-top: 20px; margin-bottom: 10px; color: #333;">Features:</h3>
+                <ul style="margin-left: 20px; margin-bottom: 20px;">
+                    <li><strong>Add Card:</strong> Click on an empty slot to add a new card</li>
+                    <li><strong>Edit Card:</strong> Click on a card to edit its details</li>
+                    <li><strong>Bulk Insert:</strong> Import multiple cards at once using CSV format</li>
+                    <li><strong>Pull Mode (P):</strong> Click and hold cards to remove them from the binder</li>
+                    <li><strong>Move Mode (M):</strong> Drag and drop cards to swap their positions</li>
+                    <li><strong>Sort:</strong> Sort cards by name, number, or value with optimized move instructions</li>
+                    <li><strong>Convert:</strong> Convert binder to a different form factor (2x2, 3x3, or 4x3) with optional sorting</li>
+                    <li><strong>Export/Import:</strong> Save your binder as JSON or load a previously saved binder</li>
+                    <li><strong>Undo (Ctrl+Z / Cmd+Z):</strong> Undo the last card pull</li>
+                </ul>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 10px; color: #333;">Keyboard Shortcuts:</h3>
+                <ul style="margin-left: 20px; margin-bottom: 20px;">
+                    <li><strong>P:</strong> Toggle Pull Mode</li>
+                    <li><strong>M:</strong> Toggle Move Mode</li>
+                    <li><strong>Ctrl+Z / Cmd+Z:</strong> Undo last card pull</li>
+                </ul>
+                
+                <h3 style="margin-top: 20px; margin-bottom: 10px; color: #333;">Page Sizes:</h3>
+                <ul style="margin-left: 20px; margin-bottom: 20px;">
+                    <li><strong>2x2:</strong> 4 cards per page</li>
+                    <li><strong>3x3:</strong> 9 cards per page (default)</li>
+                    <li><strong>4x3:</strong> 12 cards per page</li>
+                </ul>
+            </div>
+            <div class="modal-buttons">
+                <div class="left"></div>
+                <div class="right">
+                    <button class="primary" onclick="closeHelpModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
