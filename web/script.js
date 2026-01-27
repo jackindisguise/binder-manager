@@ -18,9 +18,27 @@ function getBinder() {
             if (!binder.cardsPerPage) {
                 binder.cardsPerPage = 9;
             }
-            // Ensure pages array exists
-            if (!binder.pages || !Array.isArray(binder.pages)) {
-                binder.pages = [];
+            
+            // Migrate from old pages format to new cards format
+            if (binder.pages && Array.isArray(binder.pages) && !binder.cards) {
+                const cardsPerPage = binder.cardsPerPage || 9;
+                binder.cards = [];
+                for (let i = 0; i < binder.pages.length; i++) {
+                    if (binder.pages[i] && Array.isArray(binder.pages[i])) {
+                        for (let j = 0; j < binder.pages[i].length; j++) {
+                            binder.cards.push(binder.pages[i][j] || null);
+                        }
+                    }
+                }
+                // Remove old pages property
+                delete binder.pages;
+                // Save migrated binder
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(binder));
+            }
+            
+            // Ensure cards array exists
+            if (!binder.cards || !Array.isArray(binder.cards)) {
+                binder.cards = [];
             }
             return binder;
         } catch (error) {
@@ -31,7 +49,7 @@ function getBinder() {
     // Create empty binder
     return {
         cardsPerPage: 9,
-        pages: []
+        cards: []
     };
 }
 
@@ -51,20 +69,26 @@ function changePageSize() {
     const newGrid = getGridSize(newSize);
     const sizeChange = newSize - oldSize;
     
+    if (!binder.cards) {
+        binder.cards = [];
+    }
+    
     if (sizeChange > 0) {
-        // Increasing size - add empty slots
+        // Increasing size - add empty slots to each page
         if (confirm(`Resize binder pages from ${oldGrid.cols}x${oldGrid.rows} to ${newGrid.cols}x${newGrid.rows}? This will add ${sizeChange} empty slot(s) per page.`)) {
             binder.cardsPerPage = newSize;
             
-            // Resize each existing page
-            for (let i = 0; i < binder.pages.length; i++) {
-                if (binder.pages[i] && Array.isArray(binder.pages[i])) {
-                    // Add empty slots to the end
-                    while (binder.pages[i].length < newSize) {
-                        binder.pages[i].push(null);
-                    }
+            // Add empty slots to each existing page
+            const newCards = [];
+            for (let i = 0; i < binder.cards.length; i += oldSize) {
+                const page = binder.cards.slice(i, i + oldSize);
+                // Add empty slots to fill new page size
+                while (page.length < newSize) {
+                    page.push(null);
                 }
+                newCards.push(...page);
             }
+            binder.cards = newCards;
             
             saveBinder(binder);
             updatePageSizeDropdown();
@@ -77,13 +101,14 @@ function changePageSize() {
         const slotsToRemove = Math.abs(sizeChange);
         
         // Check if any slots to be removed contain cards
-        for (let i = 0; i < binder.pages.length; i++) {
-            if (binder.pages[i] && Array.isArray(binder.pages[i])) {
-                for (let j = newSize; j < binder.pages[i].length; j++) {
-                    if (binder.pages[i][j] !== null) {
-                        canResize = false;
-                        break;
-                    }
+        for (let i = 0; i < binder.cards.length; i += oldSize) {
+            const pageStart = i;
+            const pageEnd = Math.min(i + oldSize, binder.cards.length);
+            for (let j = newSize; j < (pageEnd - pageStart); j++) {
+                const idx = pageStart + j;
+                if (idx < binder.cards.length && binder.cards[idx] !== null) {
+                    canResize = false;
+                    break;
                 }
             }
             if (!canResize) break;
@@ -98,13 +123,14 @@ function changePageSize() {
         if (confirm(`Resize binder pages from ${oldGrid.cols}x${oldGrid.rows} to ${newGrid.cols}x${newGrid.rows}? This will remove the last ${slotsToRemove} empty slot(s) per page.`)) {
             binder.cardsPerPage = newSize;
             
-            // Resize each existing page
-            for (let i = 0; i < binder.pages.length; i++) {
-                if (binder.pages[i] && Array.isArray(binder.pages[i])) {
-                    // Remove last slots
-                    binder.pages[i] = binder.pages[i].slice(0, newSize);
-                }
+            // Remove last slots from each page
+            const newCards = [];
+            for (let i = 0; i < binder.cards.length; i += oldSize) {
+                const page = binder.cards.slice(i, i + oldSize);
+                // Keep only first newSize slots
+                newCards.push(...page.slice(0, newSize));
             }
+            binder.cards = newCards;
             
             saveBinder(binder);
             updatePageSizeDropdown();
@@ -131,48 +157,30 @@ function updatePageSizeDropdown() {
     document.getElementById('pageSize').value = cardsPerPage.toString();
 }
 
-function getPageByIndex(binder, index) {
-    const cardsPerPage = getCardsPerPage();
-    const pageIndex = Math.floor(index / cardsPerPage);
-    if (!binder.pages || !Array.isArray(binder.pages)) {
+function getFirstEmptyIndex(binder) {
+    if (!binder.cards || !Array.isArray(binder.cards)) {
         return null;
     }
-    // Ensure page exists
-    while (binder.pages.length <= pageIndex) {
-        createPage(binder);
-    }
-    return binder.pages[pageIndex];
-}
-
-function getFirstEmptyIndex(binder) {
-    const cardsPerPage = getCardsPerPage();
-    for (let i = 0; i < binder.pages.length; i++) {
-        for (let j = 0; j < binder.pages[i].length; j++) {
-            if (binder.pages[i][j] === null) {
-                return i * cardsPerPage + j;
-            }
+    for (let i = 0; i < binder.cards.length; i++) {
+        if (binder.cards[i] === null || binder.cards[i] === undefined) {
+            return i;
         }
     }
     return null;
 }
 
-function createPage(binder) {
-    const cardsPerPage = getCardsPerPage();
-    const page = Array(cardsPerPage).fill(null);
-    binder.pages.push(page);
-    return page;
-}
-
 function insertCard(binder, card) {
+    if (!binder.cards) {
+        binder.cards = [];
+    }
     let firstEmptyIndex = getFirstEmptyIndex(binder);
     if (firstEmptyIndex === null) {
-        createPage(binder);
-        firstEmptyIndex = getFirstEmptyIndex(binder);
+        // No empty slots, append to end
+        firstEmptyIndex = binder.cards.length;
+        binder.cards.push(card);
+    } else {
+        binder.cards[firstEmptyIndex] = card;
     }
-    const page = getPageByIndex(binder, firstEmptyIndex);
-    const cardsPerPage = getCardsPerPage();
-    const subIndex = firstEmptyIndex % cardsPerPage;
-    page[subIndex] = card;
     return firstEmptyIndex;
 }
 
@@ -202,77 +210,93 @@ function generatePagesHtml(binder) {
         gridCols = 3; // default
     }
     
-    if (!binder.pages || !Array.isArray(binder.pages)) {
+    if (!binder.cards || !Array.isArray(binder.cards)) {
         return '';
     }
     
-    return binder.pages.map((page, pageIndex) => {
-        if (!page || !Array.isArray(page)) {
-            return '';
-        }
-        const cardsHtml = page.map((card, cardIndex) => {
-            const cardIndexNumber = pageIndex * cardsPerPage + cardIndex;
+    // Calculate number of pages needed
+    const totalSlots = binder.cards.length;
+    const numPages = Math.ceil(totalSlots / cardsPerPage);
+    
+    const pagesHtml = [];
+    for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+        const pageStart = pageIndex * cardsPerPage;
+        const pageEnd = Math.min(pageStart + cardsPerPage, totalSlots);
+        const cardsHtml = [];
+        
+        for (let i = pageStart; i < pageEnd; i++) {
+            const card = binder.cards[i];
+            const cardIndexNumber = i;
             if (!card) {
                 const onClick = pullMode ? '' : `onclick="openAddCardModal(${cardIndexNumber})"`;
-                return `<div class="card empty" ${onClick}>
+                cardsHtml.push(`<div class="card empty" ${onClick}>
                     <div class="card-index">#${cardIndexNumber}</div>
                     <div class="card-empty-label">Empty</div>
-                </div>`;
-            }
-            const escapedName = escapeHtml(card.name || '');
-            const escapedNumber = escapeHtml(card.number || '');
-            const escapedCondition = escapeHtml(card.condition || '');
-            const cardValue = card.value !== undefined && card.value !== null ? card.value : 0;
-            const formattedValue = cardValue.toFixed(2);
-            const recentClass = recentlyAddedIndices.has(cardIndexNumber) ? ' recently-added' : '';
-            if (pullMode) {
-                return `<div class="card${recentClass}" data-index="${cardIndexNumber}" onmousedown="startPull(${cardIndexNumber}, event)" onmouseup="cancelPull(${cardIndexNumber})" onmouseleave="cancelPull(${cardIndexNumber})" ontouchstart="startPull(${cardIndexNumber}, event)" ontouchend="cancelPull(${cardIndexNumber})" ontouchcancel="cancelPull(${cardIndexNumber})">
-                    <div class="card-index">#${cardIndexNumber}</div>
-                    <div class="card-info">
-                        <div class="card-name">${escapedName}</div>
-                        <div class="card-number">${escapedNumber}</div>
-                        <div class="card-condition">${escapedCondition}</div>
-                        <div class="card-value">$${formattedValue}</div>
-                    </div>
-                    <div class="pull-progress-bar" id="pullProgress-${cardIndexNumber}" style="width: 0%;"></div>
-                </div>`;
+                </div>`);
             } else {
-                return `<div class="card${recentClass}" onclick="openEditCardModal(${cardIndexNumber})">
-                    <div class="card-index">#${cardIndexNumber}</div>
-                    <div class="card-info">
-                        <div class="card-name">${escapedName}</div>
-                        <div class="card-number">${escapedNumber}</div>
-                        <div class="card-condition">${escapedCondition}</div>
-                        <div class="card-value">$${formattedValue}</div>
-                    </div>
-                </div>`;
+                const escapedName = escapeHtml(card.name || '');
+                const escapedNumber = escapeHtml(card.number || '');
+                const escapedCondition = escapeHtml(card.condition || '');
+                const cardValue = card.value !== undefined && card.value !== null ? card.value : 0;
+                const formattedValue = cardValue.toFixed(2);
+                const recentClass = recentlyAddedIndices.has(cardIndexNumber) ? ' recently-added' : '';
+                if (pullMode) {
+                    cardsHtml.push(`<div class="card${recentClass}" data-index="${cardIndexNumber}" onmousedown="startPull(${cardIndexNumber}, event)" onmouseup="cancelPull(${cardIndexNumber})" onmouseleave="cancelPull(${cardIndexNumber})" ontouchstart="startPull(${cardIndexNumber}, event)" ontouchend="cancelPull(${cardIndexNumber})" ontouchcancel="cancelPull(${cardIndexNumber})">
+                        <div class="card-index">#${cardIndexNumber}</div>
+                        <div class="card-info">
+                            <div class="card-name">${escapedName}</div>
+                            <div class="card-number">${escapedNumber}</div>
+                            <div class="card-condition">${escapedCondition}</div>
+                            <div class="card-value">$${formattedValue}</div>
+                        </div>
+                        <div class="pull-progress-bar" id="pullProgress-${cardIndexNumber}" style="width: 0%;"></div>
+                    </div>`);
+                } else {
+                    cardsHtml.push(`<div class="card${recentClass}" onclick="openEditCardModal(${cardIndexNumber})">
+                        <div class="card-index">#${cardIndexNumber}</div>
+                        <div class="card-info">
+                            <div class="card-name">${escapedName}</div>
+                            <div class="card-number">${escapedNumber}</div>
+                            <div class="card-condition">${escapedCondition}</div>
+                            <div class="card-value">$${formattedValue}</div>
+                        </div>
+                    </div>`);
+                }
             }
-        }).join('\n');
+        }
         
-        return `<div class="page">
+        // Fill remaining slots if page is incomplete
+        for (let i = pageEnd; i < pageStart + cardsPerPage; i++) {
+            const cardIndexNumber = i;
+            const onClick = pullMode ? '' : `onclick="openAddCardModal(${cardIndexNumber})"`;
+            cardsHtml.push(`<div class="card empty" ${onClick}>
+                <div class="card-index">#${cardIndexNumber}</div>
+                <div class="card-empty-label">Empty</div>
+            </div>`);
+        }
+        
+        pagesHtml.push(`<div class="page">
             <div class="page-header">Page ${pageIndex + 1}</div>
             <div class="cards-grid" style="grid-template-columns: repeat(${gridCols}, 1fr);">
-${cardsHtml}
+${cardsHtml.join('\n')}
             </div>
-        </div>`;
-    }).join('\n');
+        </div>`);
+    }
+    
+    return pagesHtml.join('\n');
 }
 
 function calculateStats(binder) {
-    if (!binder.pages || !Array.isArray(binder.pages)) {
+    if (!binder.cards || !Array.isArray(binder.cards)) {
         return { totalCards: 0, totalValue: 0, totalPages: 0 };
     }
-    const totalCards = binder.pages.reduce((sum, page) => {
-        if (!page || !Array.isArray(page)) return sum;
-        return sum + page.filter(c => c !== null).length;
+    const cardsPerPage = getCardsPerPage();
+    const totalCards = binder.cards.filter(c => c !== null && c !== undefined).length;
+    const totalValue = binder.cards.reduce((sum, card) => {
+        return sum + (card && card.value !== undefined && card.value !== null ? card.value : 0);
     }, 0);
-    const totalValue = binder.pages.reduce((sum, page) => {
-        if (!page || !Array.isArray(page)) return sum;
-        return sum + page.reduce((pageSum, card) => {
-            return pageSum + (card && card.value !== undefined && card.value !== null ? card.value : 0);
-        }, 0);
-    }, 0);
-    return { totalCards, totalValue, totalPages: binder.pages.length };
+    const totalPages = Math.ceil(binder.cards.length / cardsPerPage);
+    return { totalCards, totalValue, totalPages };
 }
 
 function render() {
@@ -327,21 +351,25 @@ function openAddCardModal(index = null) {
     
     if (index !== null) {
         const binder = getBinder();
-        const page = getPageByIndex(binder, index);
-        const cardsPerPage = getCardsPerPage();
-        const subIndex = index % cardsPerPage;
-        const card = page[subIndex];
+        if (!binder.cards) {
+            binder.cards = [];
+        }
+        // Ensure array is large enough
+        while (binder.cards.length <= index) {
+            binder.cards.push(null);
+        }
+        const card = binder.cards[index];
         if (card) {
             document.getElementById('cardName').value = card.name || '';
             document.getElementById('cardNumber').value = card.number || '';
             document.getElementById('cardCondition').value = card.condition || '';
             document.getElementById('cardValue').value = card.value || '';
-            pullBtn.style.display = 'block';
+            pullBtn.classList.remove('hidden');
         } else {
-            pullBtn.style.display = 'none';
+            pullBtn.classList.add('hidden');
         }
     } else {
-        pullBtn.style.display = 'none';
+        pullBtn.classList.add('hidden');
     }
     
     document.getElementById('cardModal').classList.add('active');
@@ -372,10 +400,14 @@ function saveCard() {
     
     if (currentEditIndex !== null) {
         // Edit existing card
-        const page = getPageByIndex(binder, currentEditIndex);
-        const cardsPerPage = getCardsPerPage();
-        const subIndex = currentEditIndex % cardsPerPage;
-        page[subIndex] = card;
+        if (!binder.cards) {
+            binder.cards = [];
+        }
+        // Ensure array is large enough
+        while (binder.cards.length <= currentEditIndex) {
+            binder.cards.push(null);
+        }
+        binder.cards[currentEditIndex] = card;
     } else {
         // Add new card
         const idx = insertCard(binder, card);
@@ -417,7 +449,20 @@ function importBinder(event) {
     reader.onload = function(e) {
         try {
             const binder = JSON.parse(e.target.result);
-            if (binder.pages && Array.isArray(binder.pages)) {
+            // Migrate from old pages format if needed
+            if (binder.pages && Array.isArray(binder.pages) && !binder.cards) {
+                const cardsPerPage = binder.cardsPerPage || 9;
+                binder.cards = [];
+                for (let i = 0; i < binder.pages.length; i++) {
+                    if (binder.pages[i] && Array.isArray(binder.pages[i])) {
+                        for (let j = 0; j < binder.pages[i].length; j++) {
+                            binder.cards.push(binder.pages[i][j] || null);
+                        }
+                    }
+                }
+                delete binder.pages;
+            }
+            if (binder.cards && Array.isArray(binder.cards)) {
                 recentlyAddedIndices.clear();
                 saveBinder(binder);
                 alert('Binder imported successfully');
@@ -435,7 +480,7 @@ function importBinder(event) {
 function clearBinder() {
     if (confirm('Are you sure you want to clear all cards? This cannot be undone.')) {
         const cardsPerPage = getCardsPerPage();
-        const binder = { cardsPerPage: cardsPerPage, pages: [] };
+        const binder = { cardsPerPage: cardsPerPage, cards: [] };
         saveBinder(binder);
     }
 }
@@ -452,11 +497,11 @@ function updatePullModeUI() {
     if (pullMode) {
         btn.textContent = 'Pull Mode: On';
         btn.classList.add('active');
-        indicator.style.display = 'block';
+        indicator.classList.remove('hidden');
     } else {
         btn.textContent = 'Pull Mode: Off';
         btn.classList.remove('active');
-        indicator.style.display = 'none';
+        indicator.classList.add('hidden');
     }
 }
 
@@ -471,10 +516,10 @@ function startPull(index, event) {
     if (!cardElement) return;
     
     const binder = getBinder();
-    const page = getPageByIndex(binder, index);
-    const cardsPerPage = getCardsPerPage();
-    const subIndex = index % cardsPerPage;
-    const card = page[subIndex];
+    if (!binder.cards || index >= binder.cards.length) {
+        return;
+    }
+    const card = binder.cards[index];
     
     if (!card) return;
     
@@ -555,9 +600,9 @@ function cancelPull(index) {
 
 function completePull(index) {
     const binder = getBinder();
-    const page = getPageByIndex(binder, index);
-    const cardsPerPage = getCardsPerPage();
-    const subIndex = index % cardsPerPage;
+    if (!binder.cards) {
+        binder.cards = [];
+    }
     
     const cardElement = document.querySelector(`[data-index="${index}"]`);
     if (cardElement) {
@@ -567,7 +612,9 @@ function completePull(index) {
         
         // Remove card after animation
         setTimeout(() => {
-            page[subIndex] = null;
+            if (index < binder.cards.length) {
+                binder.cards[index] = null;
+            }
             saveBinder(binder);
         }, 500); // Match animation duration
     }
@@ -579,14 +626,14 @@ function pullCardFromModal() {
     if (currentEditIndex === null) return;
     
     const binder = getBinder();
-    const page = getPageByIndex(binder, currentEditIndex);
-    const cardsPerPage = getCardsPerPage();
-    const subIndex = currentEditIndex % cardsPerPage;
-    const card = page[subIndex];
+    if (!binder.cards || currentEditIndex >= binder.cards.length) {
+        return;
+    }
+    const card = binder.cards[currentEditIndex];
     
     if (card) {
         if (confirm(`Remove card: ${card.name} (${card.number})?`)) {
-            page[subIndex] = null;
+            binder.cards[currentEditIndex] = null;
             saveBinder(binder);
             closeCardModal();
         }
@@ -623,15 +670,16 @@ function closeSortModal() {
 function calculateMinimumSwaps(binder, sortBy) {
     // Collect all cards with their current indices
     const cardsWithIndices = [];
-    for (let i = 0; i < binder.pages.length; i++) {
-        for (let j = 0; j < binder.pages[i].length; j++) {
-            const card = binder.pages[i][j];
-            if (card) {
-                cardsWithIndices.push({
-                    card: card,
-                    currentIndex: i * getCardsPerPage() + j
-                });
-            }
+    if (!binder.cards || !Array.isArray(binder.cards)) {
+        return { totalSwaps: 0, moves: [], cycles: [], sortedCards: [], cardsWithIndices: [] };
+    }
+    for (let i = 0; i < binder.cards.length; i++) {
+        const card = binder.cards[i];
+        if (card) {
+            cardsWithIndices.push({
+                card: card,
+                currentIndex: i
+            });
         }
     }
     
@@ -874,28 +922,22 @@ function applySort() {
     }
     
     const cardsPerPage = getCardsPerPage();
-    // Create new sorted binder
+    // Create new sorted binder with flat cards array
     const newBinder = {
         cardsPerPage: cardsPerPage,
-        pages: []
+        cards: []
     };
     
-    // Clear all pages
-    for (let i = 0; i < binder.pages.length; i++) {
-        newBinder.pages.push(Array(cardsPerPage).fill(null));
-    }
+    // Determine how many slots we need (keep at least as many as original)
+    const originalLength = binder.cards ? binder.cards.length : 0;
+    const neededSlots = Math.max(originalLength, result.sortedCards.length);
+    
+    // Initialize with nulls
+    newBinder.cards = Array(neededSlots).fill(null);
     
     // Place sorted cards in order
     result.sortedCards.forEach((item, idx) => {
-        const pageIndex = Math.floor(idx / cardsPerPage);
-        const subIndex = idx % cardsPerPage;
-        
-        // Ensure page exists
-        while (newBinder.pages.length <= pageIndex) {
-            newBinder.pages.push(Array(cardsPerPage).fill(null));
-        }
-        
-        newBinder.pages[pageIndex][subIndex] = item.card;
+        newBinder.cards[idx] = item.card;
     });
     
     saveBinder(newBinder);
@@ -913,14 +955,14 @@ document.getElementById('sortModal').addEventListener('click', function(e) {
 function openBulkInsertModal() {
     document.getElementById('bulkInsertModal').classList.add('active');
     document.getElementById('bulkInsertText').value = '';
-    document.getElementById('bulkInsertStatus').style.display = 'none';
+    document.getElementById('bulkInsertStatus').classList.add('hidden');
     document.getElementById('bulkInsertText').focus();
 }
 
 function closeBulkInsertModal() {
     document.getElementById('bulkInsertModal').classList.remove('active');
     document.getElementById('bulkInsertText').value = '';
-    document.getElementById('bulkInsertStatus').style.display = 'none';
+    document.getElementById('bulkInsertStatus').classList.add('hidden');
 }
 
 function processBulkInsert() {
@@ -999,7 +1041,7 @@ function processBulkInsert() {
     
     // Show status
     const statusDiv = document.getElementById('bulkInsertStatus');
-    statusDiv.style.display = 'block';
+    statusDiv.classList.remove('hidden');
     
     const insertedList = inserted.length > 0
         ? `<ul style="margin-top: 8px; padding-left: 20px;">

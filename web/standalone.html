@@ -14,11 +14,11 @@
             <button onclick="openAddCardModal()">Add Card</button>
             <button onclick="openBulkInsertModal()" class="secondary">Bulk Insert</button>
             <button id="pullModeBtn" onclick="togglePullMode()" class="secondary">Pull Mode: Off</button>
-            <span id="pullModeIndicator" class="pull-mode-indicator" style="display: none;">Pull Mode Active - Click cards to remove</span>
+            <span id="pullModeIndicator" class="pull-mode-indicator hidden">Pull Mode Active - Click cards to remove</span>
             <button onclick="openSortPreview()" class="secondary">Sort</button>
-            <label for="pageSize" style="display: flex; align-items: center; gap: 5px;">
-                <span style="font-size: 14px;">Page Size:</span>
-                <select id="pageSize" style="padding: 8px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px;" onchange="changePageSize()">
+            <label for="pageSize" class="page-size-label">
+                <span class="page-size-text">Page Size:</span>
+                <select id="pageSize" class="page-size-select" onchange="changePageSize()">
                     <option value="4">2x2 (4 cards)</option>
                     <option value="9" selected>3x3 (9 cards)</option>
                     <option value="12">4x3 (12 cards)</option>
@@ -41,20 +41,20 @@
     
     <!-- Sort Preview Modal -->
     <div class="modal" id="sortModal">
-        <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
+        <div class="modal-content modal-content-large">
             <h2>Sort Binder Preview</h2>
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 10px; font-weight: 600;">Sort by:</label>
-                <select id="sortCriteria" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onchange="updateSortPreview()">
+            <div class="sort-section">
+                <label class="sort-label">Sort by:</label>
+                <select id="sortCriteria" class="sort-select" onchange="updateSortPreview()">
                     <option value="name">Name</option>
                     <option value="number">Number</option>
                     <option value="value">Value (High to Low)</option>
                 </select>
             </div>
-            <div id="sortPreviewInfo" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div id="sortPreviewInfo" class="sort-preview-info">
                 <!-- Sort info will be populated here -->
             </div>
-            <div id="sortPreviewSwaps" style="margin-bottom: 20px;">
+            <div id="sortPreviewSwaps" class="sort-preview-swaps">
                 <!-- Swaps will be listed here -->
             </div>
             <div class="modal-buttons">
@@ -81,7 +81,7 @@
             <input type="number" id="cardValue" placeholder="0.00" step="0.01">
             <div class="modal-buttons">
                 <div class="left">
-                    <button id="pullCardBtn" class="danger" onclick="pullCardFromModal()" style="display: none;">Pull Card</button>
+                    <button id="pullCardBtn" class="danger hidden" onclick="pullCardFromModal()">Pull Card</button>
                 </div>
                 <div class="right">
                     <button class="secondary" onclick="closeCardModal()">Cancel</button>
@@ -93,16 +93,16 @@
     
     <!-- Bulk Insert Modal -->
     <div class="modal" id="bulkInsertModal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content modal-content-medium">
             <h2>Bulk Insert Cards</h2>
-            <p style="margin-bottom: 15px; color: #666; font-size: 14px;">
+            <p class="bulk-insert-description">
                 Enter cards in CSV format (one per line):<br>
                 <strong>Name, Number, Condition, Value</strong><br>
                 Example: Lightning, 24-070L, Near Mint, 6.29
             </p>
             <label for="bulkInsertText">CSV Data:</label>
-            <textarea id="bulkInsertText" style="width: 100%; min-height: 200px; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; font-family: monospace; resize: vertical;" placeholder="Lightning, 24-070L, Near Mint, 6.29&#10;Cloud, 25-006L, Near Mint Foil, 23.74"></textarea>
-            <div id="bulkInsertStatus" style="margin-top: 10px; padding: 10px; border-radius: 8px; display: none;"></div>
+            <textarea id="bulkInsertText" class="bulk-insert-textarea" placeholder="Lightning, 24-070L, Near Mint, 6.29&#10;Cloud, 25-006L, Near Mint Foil, 23.74"></textarea>
+            <div id="bulkInsertStatus" class="bulk-insert-status hidden"></div>
             <div class="modal-buttons">
                 <div class="left"></div>
                 <div class="right">

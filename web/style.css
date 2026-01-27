@@ -12,8 +12,7 @@ body {
 }
 
 .container {
-    max-width: 1400px;
-    margin: 0 auto;
+    margin: 10px;
 }
 
 h1 {
@@ -381,4 +380,92 @@ h1 {
 .modal-buttons .right {
     display: flex;
     gap: 10px;
+}
+
+/* Utility classes */
+.hidden {
+    display: none;
+}
+
+/* Page size controls */
+.page-size-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.page-size-text {
+    font-size: 14px;
+}
+
+.page-size-select {
+    padding: 8px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* Modal content variants */
+.modal-content-large {
+    max-width: 700px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-content-medium {
+    max-width: 600px;
+}
+
+/* Sort modal styles */
+.sort-section {
+    margin-bottom: 20px;
+}
+
+.sort-label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.sort-select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.sort-preview-info {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.sort-preview-swaps {
+    margin-bottom: 20px;
+}
+
+/* Bulk insert modal styles */
+.bulk-insert-description {
+    margin-bottom: 15px;
+    color: #666;
+    font-size: 14px;
+}
+
+.bulk-insert-textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: monospace;
+    resize: vertical;
+}
+
+.bulk-insert-status {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 8px;
 }
