@@ -2,6 +2,8 @@
 
 A web application for managing a trading card game binder collection. It displays cards in a grid layout organized by pages, similar to a physical binder.
 
+**Live demo:** https://jackindisguise.github.io/binder-manager/
+
 ## What it does
 
 The application lets you track cards in a virtual binder. Each card has a name, number, condition, and optional value. Cards are displayed in pages with configurable sizes: 2x2 (4 cards), 3x3 (9 cards), or 4x3 (12 cards).
